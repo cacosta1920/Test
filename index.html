@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista del Mercado</title>
+  <style>
+    :root {
+      --primary-color: #2e7d32;
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --danger-color: #d32f2f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 24px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary-color);
+      margin-bottom: 20px;
+    }
+
+    .input-form {
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+
+    button.btn-add {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    button.btn-add:hover {
+      background-color: #1b5e20;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+
+    .btn-delete {
+      background-color: var(--danger-color);
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .btn-delete:hover {
+      background-color: #b71c1c;
+    }
+
+    .total-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #e8f5e9;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #1b5e20;
+      margin-bottom: 15px;
+    }
+
+    .btn-clear {
+      width: 100%;
+      background-color: #757575;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-clear:hover {
+      background-color: #424242;
+    }
+
+    @media (max-width: 480px) {
+      .input-form {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🛒 Lista de Compras</h1>
+
+    <form id="itemForm" class="input-form">
+      <input type="text" id="nombre" placeholder="Producto (ej. Papas)" required>
+      <input type="number" id="precio" placeholder="Precio (S/)" min="0" step="0.01" required>
+      <button type="submit" class="btn-add">Agregar</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Precio</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="listaMercado">
+      </tbody>
+    </table>
+
+    <div class="total-container">
+      <span>Total Final:</span>
+      <span id="precioTotal">S/ 0.00</span>
+    </div>
+
+    <button class="btn-clear" onclick="limpiarLista()">Vaciar Lista Completa</button>
+  </div>
+
+  <script>
+    let productos = JSON.parse(localStorage.getItem('mercado_productos')) || [];
+
+    const form = document.getElementById('itemForm');
+    const listaMercado = document.getElementById('listaMercado');
+    const precioTotal = document.getElementById('precioTotal');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const nombre = document.getElementById('nombre').value;
+      const precio = parseFloat(document.getElementById('precio').value);
+
+      const nuevoProducto = {
+        id: Date.now(),
+        nombre: nombre,
+        precio: precio
+      };
+
+      productos.push(nuevoProducto);
+      
+      guardarYActualizar();
+      
+      form.reset();
+      document.getElementById('nombre').focus();
+    });
+
+    function eliminarProducto(id) {
+      productos = productos.filter(prod => prod.id !== id);
+      guardarYActualizar();
+    }
+
+    function limpiarLista() {
+      if (productos.length === 0) return;
+      
+      if (confirm('¿Estás seguro de que deseas borrar toda la lista?')) {
+        productos = [];
+        guardarYActualizar();
+      }
+    }
+
+    function guardarYActualizar() {
+      localStorage.setItem('mercado_productos', JSON.stringify(productos));
+      actualizarInterfaz();
+    }
+
+    function actualizarInterfaz() {
+      listaMercado.innerHTML = '';
+      let total = 0;
+
+      productos.forEach(prod => {
+        total += prod.precio;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${prod.nombre}</td>
+          <td>S/ ${prod.precio.toFixed(2)}</td>
+          <td style="text-align: right;">
+            <button class="btn-delete" onclick="eliminarProducto(${prod.id})">X</button>
+          </td>
+        `;
+        listaMercado.appendChild(tr);
+      });
+
+      precioTotal.textContent = `S/ ${total.toFixed(2)}`;
+    }
+
+    actualizarInterfaz();
+  </script>
+</body>
+</html>
