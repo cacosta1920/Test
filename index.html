@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lista del Mercado</title>
+  <!-- Librería externa html2pdf.js para exportar la boleta a PDF/Imagen en móviles -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --primary-color: #2e7d32;
@@ -11,6 +13,7 @@
       --card-bg: #ffffff;
       --text-color: #333333;
       --danger-color: #d32f2f;
+      --accent-color: #0288d1;
     }
 
     * {
@@ -40,9 +43,20 @@
     h1 {
       text-align: center;
       color: var(--primary-color);
-      margin-bottom: 20px;
+      margin-bottom: 5px;
     }
 
+    /* Fecha en la cabecera */
+    .fecha-header {
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 20px;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    /* Formulario de entrada */
     .input-form {
       display: grid;
       grid-template-columns: 2fr 1fr auto;
@@ -77,6 +91,7 @@
       background-color: #1b5e20;
     }
 
+    /* Tabla de productos */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -108,6 +123,7 @@
       background-color: #b71c1c;
     }
 
+    /* Total y acciones */
     .total-container {
       display: flex;
       justify-content: space-between;
@@ -119,6 +135,29 @@
       font-weight: bold;
       color: #1b5e20;
       margin-bottom: 15px;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-boleta {
+      width: 100%;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+
+    .btn-boleta:hover {
+      background-color: #0277bd;
     }
 
     .btn-clear {
@@ -136,6 +175,122 @@
       background-color: #424242;
     }
 
+    /* ESTILOS DEL MODAL DE BOLETA */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 15px;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+
+    /* Formato ticket / boleta de venta */
+    .ticket {
+      background-color: #fff;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 15px;
+      border: 1px dashed #ccc;
+      color: #000;
+      margin-bottom: 15px;
+    }
+
+    .ticket-header {
+      text-align: center;
+      border-bottom: 1px dashed #000;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+    }
+
+    .ticket-header h2 {
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .ticket-fecha {
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .ticket-table {
+      width: 100%;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+
+    .ticket-table th {
+      background: none;
+      border-bottom: 1px dashed #000;
+      padding: 5px 0;
+    }
+
+    .ticket-table td {
+      border-bottom: none;
+      padding: 4px 0;
+    }
+
+    .ticket-total {
+      border-top: 1px dashed #000;
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .ticket-footer {
+      text-align: center;
+      font-size: 11px;
+      margin-top: 12px;
+      color: #555;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-download {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .btn-close {
+      background-color: var(--danger-color);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    /* Responsive para móviles */
     @media (max-width: 480px) {
       .input-form {
         grid-template-columns: 1fr;
@@ -146,14 +301,18 @@
 <body>
 
   <div class="container">
-    <h1>🛒 Lista de Compras</h1>
+    <h1>🛒 Lista de Gastos</h1>
+    <!-- Fecha del día -->
+    <div id="fechaActual" class="fecha-header"></div>
 
+    <!-- Formulario para agregar productos -->
     <form id="itemForm" class="input-form">
       <input type="text" id="nombre" placeholder="Producto (ej. Papas)" required>
       <input type="number" id="precio" placeholder="Precio (S/)" min="0" step="0.01" required>
       <button type="submit" class="btn-add">Agregar</button>
     </form>
 
+    <!-- Tabla con los ítems -->
     <table>
       <thead>
         <tr>
@@ -163,24 +322,91 @@
         </tr>
       </thead>
       <tbody id="listaMercado">
+        <!-- Se llena dinámicamente -->
       </tbody>
     </table>
 
+    <!-- Total acumulado -->
     <div class="total-container">
       <span>Total Final:</span>
       <span id="precioTotal">S/ 0.00</span>
     </div>
 
-    <button class="btn-clear" onclick="limpiarLista()">Vaciar Lista Completa</button>
+    <!-- Acciones principales -->
+    <div class="action-buttons">
+      <button class="btn-boleta" onclick="generarBoleta()">🧾 Generar Comprobante</button>
+      <button class="btn-clear" onclick="limpiarLista()">Vaciar Lista Completa</button>
+    </div>
+  </div>
+
+  <!-- MODAL / VENTANA DE LA BOLETA -->
+  <div id="modalBoleta" class="modal-overlay">
+    <div class="modal-content">
+      
+      <!-- Contenido del ticket imprimible / descargable -->
+      <div id="ticketContenido" class="ticket">
+        <div class="ticket-header">
+          <h2>BOLETA DE GASTOS</h2>
+          <div id="ticketFecha" class="ticket-fecha"></div>
+        </div>
+
+        <table class="ticket-table">
+          <thead>
+            <tr>
+              <th style="text-align: left;">PRODUCTO</th>
+              <th style="text-align: right;">PRECIO</th>
+            </tr>
+          </thead>
+          <tbody id="ticketLista">
+            <!-- Items de la boleta -->
+          </tbody>
+        </table>
+
+        <div class="ticket-total">
+          <span>TOTAL:</span>
+          <span id="ticketTotal">S/ 0.00</span>
+        </div>
+
+        <div class="ticket-footer">
+          *** ¡Gracias! ***
+        </div>
+      </div>
+
+      <!-- Botones de descarga y cierre -->
+      <div class="modal-actions">
+        <button class="btn-download" onclick="descargarPDF()">📄 Descargar Comprobante (PDF)</button>
+        <button class="btn-close" onclick="cerrarBoleta()">Cerrar</button>
+      </div>
+    </div>
   </div>
 
   <script>
+    // Cargar productos desde localStorage al iniciar
     let productos = JSON.parse(localStorage.getItem('mercado_productos')) || [];
 
     const form = document.getElementById('itemForm');
     const listaMercado = document.getElementById('listaMercado');
     const precioTotal = document.getElementById('precioTotal');
+    const fechaActualEl = document.getElementById('fechaActual');
 
+    // Función para obtener la fecha y hora formateada en español
+    function obtenerFechaFormateada() {
+      const ahora = new Date();
+      const opciones = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      return ahora.toLocaleDateString('es-ES', opciones);
+    }
+
+    // Mostrar fecha en la cabecera al cargar
+    fechaActualEl.textContent = obtenerFechaFormateada();
+
+    // Guardar producto
     form.addEventListener('submit', function(e) {
       e.preventDefault();
 
@@ -194,18 +420,19 @@
       };
 
       productos.push(nuevoProducto);
-      
       guardarYActualizar();
       
       form.reset();
       document.getElementById('nombre').focus();
     });
 
+    // Eliminar un solo producto
     function eliminarProducto(id) {
       productos = productos.filter(prod => prod.id !== id);
       guardarYActualizar();
     }
 
+    // Vaciar lista
     function limpiarLista() {
       if (productos.length === 0) return;
       
@@ -215,11 +442,13 @@
       }
     }
 
+    // Guardar en localStorage
     function guardarYActualizar() {
       localStorage.setItem('mercado_productos', JSON.stringify(productos));
       actualizarInterfaz();
     }
 
+    // Renderizar lista principal
     function actualizarInterfaz() {
       listaMercado.innerHTML = '';
       let total = 0;
@@ -241,6 +470,54 @@
       precioTotal.textContent = `S/ ${total.toFixed(2)}`;
     }
 
+    // MOSTRAR BOLETA / COMPROBANTE
+    function generarBoleta() {
+      if (productos.length === 0) {
+        alert('Agrega al menos un producto para generar el comprobante.');
+        return;
+      }
+
+      const ticketFecha = document.getElementById('ticketFecha');
+      const ticketLista = document.getElementById('ticketLista');
+      const ticketTotal = document.getElementById('ticketTotal');
+
+      ticketFecha.textContent = obtenerFechaFormateada();
+      ticketLista.innerHTML = '';
+      let total = 0;
+
+      productos.forEach(prod => {
+        total += prod.precio;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align: left;">1x ${prod.nombre}</td>
+          <td style="text-align: right;">S/ ${prod.precio.toFixed(2)}</td>
+        `;
+        ticketLista.appendChild(tr);
+      });
+
+      ticketTotal.textContent = `S/ ${total.toFixed(2)}`;
+      document.getElementById('modalBoleta').style.display = 'flex';
+    }
+
+    function cerrarBoleta() {
+      document.getElementById('modalBoleta').style.display = 'none';
+    }
+
+    // DESCARGAR COMO PDF FORMATO TICKET
+    function descargarPDF() {
+      const elemento = document.getElementById('ticketContenido');
+      const opciones = {
+        margin:       0.3,
+        filename:     `boleta_mercado_${Date.now()}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'a6', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opciones).from(elemento).save();
+    }
+
+    // Renderizar al cargar
     actualizarInterfaz();
   </script>
 </body>
