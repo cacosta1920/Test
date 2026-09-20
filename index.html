@@ -1,524 +1,183 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lista del Mercado</title>
-  <!-- Librería externa html2pdf.js para exportar la boleta a PDF/Imagen en móviles -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <style>
-    :root {
-      --primary-color: #2e7d32;
-      --bg-color: #f4f6f8;
-      --card-bg: #ffffff;
-      --text-color: #333333;
-      --danger-color: #d32f2f;
-      --accent-color: #0288d1;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 500px;
-      background: var(--card-bg);
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      padding: 24px;
-    }
-
-    h1 {
-      text-align: center;
-      color: var(--primary-color);
-      margin-bottom: 5px;
-    }
-
-    /* Fecha en la cabecera */
-    .fecha-header {
-      text-align: center;
-      font-size: 14px;
-      color: #666;
-      margin-bottom: 20px;
-      font-weight: 500;
-      text-transform: capitalize;
-    }
-
-    /* Formulario de entrada */
-    .input-form {
-      display: grid;
-      grid-template-columns: 2fr 1fr auto;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    input {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: var(--primary-color);
-    }
-
-    button.btn-add {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.2s;
-    }
-
-    button.btn-add:hover {
-      background-color: #1b5e20;
-    }
-
-    /* Tabla de productos */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-    }
-
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-
-    th {
-      background-color: #f8f9fa;
-      font-weight: 600;
-    }
-
-    .btn-delete {
-      background-color: var(--danger-color);
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .btn-delete:hover {
-      background-color: #b71c1c;
-    }
-
-    /* Total y acciones */
-    .total-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: #e8f5e9;
-      padding: 16px;
-      border-radius: 8px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #1b5e20;
-      margin-bottom: 15px;
-    }
-
-    .action-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .btn-boleta {
-      width: 100%;
-      background-color: var(--accent-color);
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 15px;
-      transition: background 0.2s;
-    }
-
-    .btn-boleta:hover {
-      background-color: #0277bd;
-    }
-
-    .btn-clear {
-      width: 100%;
-      background-color: #757575;
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .btn-clear:hover {
-      background-color: #424242;
-    }
-
-    /* ESTILOS DEL MODAL DE BOLETA */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      padding: 15px;
-    }
-
-    .modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 400px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-    }
-
-    /* Formato ticket / boleta de venta */
-    .ticket {
-      background-color: #fff;
-      font-family: 'Courier New', Courier, monospace;
-      padding: 15px;
-      border: 1px dashed #ccc;
-      color: #000;
-      margin-bottom: 15px;
-    }
-
-    .ticket-header {
-      text-align: center;
-      border-bottom: 1px dashed #000;
-      padding-bottom: 10px;
-      margin-bottom: 10px;
-    }
-
-    .ticket-header h2 {
-      font-size: 18px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .ticket-fecha {
-      font-size: 12px;
-      margin-top: 5px;
-    }
-
-    .ticket-table {
-      width: 100%;
-      margin-bottom: 10px;
-      font-size: 13px;
-    }
-
-    .ticket-table th {
-      background: none;
-      border-bottom: 1px dashed #000;
-      padding: 5px 0;
-    }
-
-    .ticket-table td {
-      border-bottom: none;
-      padding: 4px 0;
-    }
-
-    .ticket-total {
-      border-top: 1px dashed #000;
-      padding-top: 8px;
-      display: flex;
-      justify-content: space-between;
-      font-weight: bold;
-      font-size: 15px;
-    }
-
-    .ticket-footer {
-      text-align: center;
-      font-size: 11px;
-      margin-top: 12px;
-      color: #555;
-    }
-
-    .modal-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .btn-download {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 13px;
-    }
-
-    .btn-close {
-      background-color: var(--danger-color);
-      color: white;
-      border: none;
-      padding: 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 13px;
-    }
-
-    /* Responsive para móviles */
-    @media (max-width: 480px) {
-      .input-form {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pastelería José Luis · Control de ventas (prototipo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <div class="container">
-    <h1>🛒 Lista de Gastos</h1>
-    <!-- Fecha del día -->
-    <div id="fechaActual" class="fecha-header"></div>
-
-    <!-- Formulario para agregar productos -->
-    <form id="itemForm" class="input-form">
-      <input type="text" id="nombre" placeholder="Producto (ej. Papas)" required>
-      <input type="number" id="precio" placeholder="Precio (S/)" min="0" step="0.01" required>
-      <button type="submit" class="btn-add">Agregar</button>
-    </form>
-
-    <!-- Tabla con los ítems -->
-    <table>
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Precio</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="listaMercado">
-        <!-- Se llena dinámicamente -->
-      </tbody>
-    </table>
-
-    <!-- Total acumulado -->
-    <div class="total-container">
-      <span>Total Final:</span>
-      <span id="precioTotal">S/ 0.00</span>
+<!-- ===================== INICIO DE SESIÓN (RF01) ===================== -->
+<section id="login" class="login" aria-labelledby="login-title">
+  <div class="awning big" aria-hidden="true"></div>
+  <div class="login-body">
+    <div>
+      <h1 class="wordmark">Pastelería<br>José Luis</h1>
+      <p class="lede">Sistema de control de ventas. Registra cada venta, calcula el total y el cambio, y entrega el comprobante cuando el cliente lo pida.</p>
     </div>
-
-    <!-- Acciones principales -->
-    <div class="action-buttons">
-      <button class="btn-boleta" onclick="generarBoleta()">🧾 Generar Comprobante</button>
-      <button class="btn-clear" onclick="limpiarLista()">Vaciar Lista Completa</button>
-    </div>
-  </div>
-
-  <!-- MODAL / VENTANA DE LA BOLETA -->
-  <div id="modalBoleta" class="modal-overlay">
-    <div class="modal-content">
-      
-      <!-- Contenido del ticket imprimible / descargable -->
-      <div id="ticketContenido" class="ticket">
-        <div class="ticket-header">
-          <h2>BOLETA DE GASTOS</h2>
-          <div id="ticketFecha" class="ticket-fecha"></div>
+    <div>
+      <div class="card login-card" role="group" aria-labelledby="login-title">
+        <div>
+          <h2 id="login-title">Iniciar sesión</h2>
+          <p class="sub">Ingresa con tu usuario para empezar a vender.</p>
         </div>
-
-        <table class="ticket-table">
-          <thead>
-            <tr>
-              <th style="text-align: left;">PRODUCTO</th>
-              <th style="text-align: right;">PRECIO</th>
-            </tr>
-          </thead>
-          <tbody id="ticketLista">
-            <!-- Items de la boleta -->
-          </tbody>
-        </table>
-
-        <div class="ticket-total">
-          <span>TOTAL:</span>
-          <span id="ticketTotal">S/ 0.00</span>
+        <div class="field">
+          <label for="user">Usuario</label>
+          <div class="control" id="userBox"><input id="user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Ejemplo: encargado"></div>
         </div>
-
-        <div class="ticket-footer">
-          *** ¡Gracias! ***
+        <div class="field">
+          <label for="pass">Contraseña</label>
+          <div class="control" id="passBox">
+            <input id="pass" type="password" autocomplete="current-password" placeholder="Tu contraseña">
+            <button type="button" class="toggle-pass" id="togglePass" aria-controls="pass" aria-label="Mostrar contraseña">Mostrar</button>
+          </div>
         </div>
+        <p class="msg" id="loginMsg" role="alert"></p>
+        <button class="btn primary lg block" id="loginBtn" type="button">Iniciar sesión</button>
+        <p class="help">¿Olvidaste tu contraseña? Pide al Administrador que la restablezca.</p>
       </div>
-
-      <!-- Botones de descarga y cierre -->
-      <div class="modal-actions">
-        <button class="btn-download" onclick="descargarPDF()">📄 Descargar Comprobante (PDF)</button>
-        <button class="btn-close" onclick="cerrarBoleta()">Cerrar</button>
+      <div class="demo">
+        <p>Cuentas de prueba de este prototipo. Elige una para llenar los campos.</p>
+        <div class="demo-row">
+          <button class="chip" type="button" data-fill="admin,admin123">Administrador<small>admin / admin123</small></button>
+          <button class="chip" type="button" data-fill="encargado,ventas123">Encargado de ventas<small>encargado / ventas123</small></button>
+        </div>
       </div>
     </div>
   </div>
+  <footer class="foot">
+    <span>Sistema de control de ventas de la pastelería José Luis</span>
+    <span>Prototipo del Curso Integrador I: Sistemas Software</span>
+  </footer>
+</section>
 
-  <script>
-    // Cargar productos desde localStorage al iniciar
-    let productos = JSON.parse(localStorage.getItem('mercado_productos')) || [];
+<!-- ===================== APLICACIÓN ===================== -->
+<div id="app" class="app" hidden>
+  <aside class="side" id="side" aria-label="Menú principal">
+    <div class="brand">Pastelería José Luis<span>Control de ventas</span></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <div class="who">
+        <div class="avatar" id="avatar">A</div>
+        <div><b id="whoName">admin</b><small id="whoRole">Administrador</small></div>
+      </div>
+      <button class="logout" id="logout" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Cerrar sesión</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
 
-    const form = document.getElementById('itemForm');
-    const listaMercado = document.getElementById('listaMercado');
-    const precioTotal = document.getElementById('precioTotal');
-    const fechaActualEl = document.getElementById('fechaActual');
+  <div class="main">
+    <div class="awning slim" aria-hidden="true"></div>
+    <header class="topbar">
+      <button class="burger" id="burger" type="button" aria-label="Abrir menú" aria-controls="side" aria-expanded="false"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <span class="date" id="today"></span>
+    </header>
 
-    // Función para obtener la fecha y hora formateada en español
-    function obtenerFechaFormateada() {
-      const ahora = new Date();
-      const opciones = { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      };
-      return ahora.toLocaleDateString('es-ES', opciones);
-    }
+    <main class="content" id="content" tabindex="-1">
 
-    // Mostrar fecha en la cabecera al cargar
-    fechaActualEl.textContent = obtenerFechaFormateada();
+      <!-- NUEVA VENTA (RF09 a RF14) -->
+      <section id="v-venta" class="view" aria-labelledby="t-venta">
+        <div class="view-head">
+          <div>
+            <h1 id="t-venta">Nueva venta</h1>
+            <p>Elige los productos, indica cuánto entrega el cliente y confirma.</p>
+          </div>
+          <span class="pill num" id="saleId">Venta V-0004</span>
+        </div>
 
-    // Guardar producto
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
+        <div class="sale">
+          <div class="card catalog">
+            <div class="tools">
+              <div class="control">
+                <svg class="i pre" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input id="search" type="search" placeholder="Buscar producto" aria-label="Buscar producto">
+              </div>
+            </div>
+            <div class="cats" id="cats" role="group" aria-label="Categorías"></div>
+            <div style="height:16px"></div>
+            <div class="grid" id="grid"></div>
+          </div>
 
-      const nombre = document.getElementById('nombre').value;
-      const precio = parseFloat(document.getElementById('precio').value);
+          <aside class="card ticket" id="ticket" aria-labelledby="ticket-title">
+            <div class="ticket-head">
+              <h2 id="ticket-title">Venta actual</h2>
+              <button class="link-btn" id="clear" type="button" hidden>Vaciar</button>
+            </div>
+            <div id="empty" class="empty">Aún no hay productos. Toca un producto del catálogo para agregarlo.</div>
+            <ul class="lines" id="lines" hidden></ul>
+            <hr class="sep">
+            <div class="total-row"><span>Total a pagar</span><strong class="num" id="total">S/ 0.00</strong></div>
 
-      const nuevoProducto = {
-        id: Date.now(),
-        nombre: nombre,
-        precio: precio
-      };
+            <div class="field">
+              <label for="paid">Monto entregado por el cliente</label>
+              <div class="control" id="paidBox"><span class="pre">S/</span><input id="paid" class="num" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off"></div>
+            </div>
+            <div class="quick" id="quick">
+              <button class="chip" type="button" data-q="exact">Monto exacto</button>
+              <button class="chip" type="button" data-q="20">S/ 20</button>
+              <button class="chip" type="button" data-q="50">S/ 50</button>
+              <button class="chip" type="button" data-q="100">S/ 100</button>
+              <button class="chip" type="button" data-q="200">S/ 200</button>
+            </div>
+            <div class="change num" id="change" aria-live="polite"><span>Cambio</span><strong>S/ 0.00</strong></div>
 
-      productos.push(nuevoProducto);
-      guardarYActualizar();
-      
-      form.reset();
-      document.getElementById('nombre').focus();
-    });
+            <hr class="sep">
+            <label class="switch"><input type="checkbox" id="receipt" role="switch"><span class="track"></span><span>El cliente pide comprobante de pago</span></label>
+            <div class="field" id="custBox" hidden>
+              <label for="cust">Nombre del cliente (opcional)</label>
+              <div class="control"><input id="cust" type="text" autocomplete="off" placeholder="Ejemplo: María Pérez"></div>
+            </div>
 
-    // Eliminar un solo producto
-    function eliminarProducto(id) {
-      productos = productos.filter(prod => prod.id !== id);
-      guardarYActualizar();
-    }
+            <button class="btn primary lg block" id="confirm" type="button" disabled>Confirmar venta</button>
+            <p class="hint" id="hint" aria-live="polite">Agrega al menos un producto.</p>
+          </aside>
+        </div>
+      </section>
 
-    // Vaciar lista
-    function limpiarLista() {
-      if (productos.length === 0) return;
-      
-      if (confirm('¿Estás seguro de que deseas borrar toda la lista?')) {
-        productos = [];
-        guardarYActualizar();
-      }
-    }
+      <!-- VENTAS REGISTRADAS -->
+      <section id="v-historial" class="view" aria-labelledby="t-historial" hidden>
+        <div class="view-head">
+          <div>
+            <h1 id="t-historial">Ventas registradas</h1>
+            <p>Resumen de las ventas de hoy. Las ventas nuevas aparecen aquí al confirmarlas.</p>
+          </div>
+        </div>
+        <div class="card stats" id="stats"></div>
+        <div class="card table-wrap"><table id="salesTable"></table></div>
+      </section>
 
-    // Guardar en localStorage
-    function guardarYActualizar() {
-      localStorage.setItem('mercado_productos', JSON.stringify(productos));
-      actualizarInterfaz();
-    }
+      <!-- MÓDULOS DEL ADMINISTRADOR (solo marcador) -->
+      <section id="v-productos" class="view" aria-labelledby="t-productos" hidden>
+        <div class="view-head"><div><h1 id="t-productos">Productos</h1></div></div>
+        <div class="card ph">
+          <p>Aquí el Administrador registrará, consultará y eliminará los productos que se venden (RF06 a RF08). Los precios de Nueva venta salen de este catálogo.</p>
+          <p class="lockline"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Solo el Administrador ve este módulo (RNF02). Se diseña en el siguiente sprint.</p>
+        </div>
+      </section>
+      <section id="v-usuarios" class="view" aria-labelledby="t-usuarios" hidden>
+        <div class="view-head"><div><h1 id="t-usuarios">Usuarios</h1></div></div>
+        <div class="card ph">
+          <p>Aquí el Administrador registrará, consultará, modificará y eliminará usuarios, y les asignará su perfil de acceso (RF02 a RF05).</p>
+          <p class="lockline"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Solo el Administrador ve este módulo (RNF02). Se diseña en el siguiente sprint.</p>
+        </div>
+      </section>
+    </main>
 
-    // Renderizar lista principal
-    function actualizarInterfaz() {
-      listaMercado.innerHTML = '';
-      let total = 0;
+    <footer class="foot">
+      <span>Sistema de control de ventas de la pastelería José Luis</span>
+      <span>Prototipo del Curso Integrador I: Sistemas Software</span>
+    </footer>
+  </div>
 
-      productos.forEach(prod => {
-        total += prod.precio;
+  <button class="mbar" id="mbar" type="button"><span id="mbarLeft">Ver venta</span><span class="num" id="mbarRight">S/ 0.00</span></button>
+</div>
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${prod.nombre}</td>
-          <td>S/ ${prod.precio.toFixed(2)}</td>
-          <td style="text-align: right;">
-            <button class="btn-delete" onclick="eliminarProducto(${prod.id})">X</button>
-          </td>
-        `;
-        listaMercado.appendChild(tr);
-      });
+<dialog id="dlg" aria-labelledby="dlgTitle"><div class="dlg" id="dlgBody"></div></dialog>
 
-      precioTotal.textContent = `S/ ${total.toFixed(2)}`;
-    }
-
-    // MOSTRAR BOLETA / COMPROBANTE
-    function generarBoleta() {
-      if (productos.length === 0) {
-        alert('Agrega al menos un producto para generar el comprobante.');
-        return;
-      }
-
-      const ticketFecha = document.getElementById('ticketFecha');
-      const ticketLista = document.getElementById('ticketLista');
-      const ticketTotal = document.getElementById('ticketTotal');
-
-      ticketFecha.textContent = obtenerFechaFormateada();
-      ticketLista.innerHTML = '';
-      let total = 0;
-
-      productos.forEach(prod => {
-        total += prod.precio;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="text-align: left;">1x ${prod.nombre}</td>
-          <td style="text-align: right;">S/ ${prod.precio.toFixed(2)}</td>
-        `;
-        ticketLista.appendChild(tr);
-      });
-
-      ticketTotal.textContent = `S/ ${total.toFixed(2)}`;
-      document.getElementById('modalBoleta').style.display = 'flex';
-    }
-
-    function cerrarBoleta() {
-      document.getElementById('modalBoleta').style.display = 'none';
-    }
-
-    // DESCARGAR COMO PDF FORMATO TICKET
-    function descargarPDF() {
-      const elemento = document.getElementById('ticketContenido');
-      const opciones = {
-        margin:       0.3,
-        filename:     `boleta_mercado_${Date.now()}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'a6', orientation: 'portrait' }
-      };
-
-      html2pdf().set(opciones).from(elemento).save();
-    }
-
-    // Renderizar al cargar
-    actualizarInterfaz();
-  </script>
+<script src="func.js"></script>
 </body>
 </html>
